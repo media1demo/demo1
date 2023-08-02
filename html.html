@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tejnium</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="upload.js"></script>
+    <script src="download.js"></script>
+    <script src="content.js"></script>
+    <script src="invite.js"></script>
+ 
+    <style>
+  #message-input { resize: both !important; width: 100%;
+  max-width: 800px;
+  box-sizing: border-box;
+  resize: both;
+  
+ }
+  input[type="submit"] {
+  height: 37px;
+  line-height: 37px;
+}
+#message-form {
+  text-align: center;  
+}
+.question {
+  background: #eef;
+  border: 1px solid #88d;
+  border-radius: 5px; 
+  padding: 5px;
+}
+
+.response {
+  background: #efe;
+  border: 1px solid #8d8;
+  border-radius: 5px;
+  padding: 5px; 
+}
+.chat {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.controls {
+  display: flex;
+  flex-shrink: 0;
+  padding: 10px;
+}
+
+/* message styles */
+.message {
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+.question {
+  background: #ddd;
+  border-radius: 5px;
+}
+
+.response {
+  background: #eee;
+  border-radius: 5px; 
+}
+#output {
+  background-color: #f5f5f5; 
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 10px;  
+}
+
+#output b {
+  font-weight: bold;
+}
+#output br {
+
+background: #ddd; /* color */
+height: 1px; /* height of line */
+margin: 20px; /* spacing */
+
+}
+      </style>
+  </head>
+  
+  <body>
+    <h1></h1>
+    <form id="message-form">
+      <label for="message-input"></label><br>
+      <textarea id="message-input" name="message"></textarea>
+      <input type="submit" value="Submit">
+    </form>
+    <div id="output"></div>
+
+    <script>
+       $(document).ready(function() {
+
+// Textarea element
+var textarea = $('#message-input');
+
+// On keydown, increase height
+textarea.on('keydown', function(e) {
+  if(this.scrollHeight > this.clientHeight) {
+    $(this).height(function(index, height) {
+      return height + 20;
+    });
+  }
+});
+
+});
+
+    const form = document.getElementById('message-form');
+const messageInput = document.getElementById('message-input');
+const outputDiv = document.getElementById('output');
+const textarea = document.getElementById('message-input');
+
+// Add keydown handler
+textarea.addEventListener('keydown', e => {
+
+  // Check for enter key
+  if(e.keyCode === 13) {
+
+    // Prevent default newline
+    e.preventDefault(); 
+
+    // Submit form
+    // document.getElementById('message-form').submit();
+    console.log("message done ");
+    submitMessage();
+  }
+}); 
+async function submitMessage() {
+  // Get message  
+  const message = textarea.value;
+  console.log('message :>> ', message);
+  
+  const response = await sendMessage(message);
+  if (navigator.clipboard) {
+  // supported
+  console.log("clipboad possible");
+} else {
+  // not supported
+  console.log("clipboad not possible");
+
+}
+try {
+  await navigator.clipboard.writeText(response); 
+  // supported
+} catch (e) {
+  // not supported
+  console.log('error :>> ', e);
+} 
+if (typeof ClipboardEvent === 'function') {
+  // supported
+  console.log("clipboardevent possible");
+} else {
+  // not supported
+  console.log("clipboardevent not possible");
+}
+
+console.log('response 1st:>> ', response);
+  const clipboardContent = await navigator.clipboard.readText();
+console.log('Clipboard contains:', clipboardContent);
+  
+
+  // Submit logic
+  sendMessage(message); 
+  outputDiv.innerHTML += `<br>Response: ${response}`;
+}
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const message = messageInput.value;
+  outputDiv.innerHTML = `Sending message: ${message}`;
+
+  // Send the message to the server-side script
+  const response = await sendMessage(message);
+console.log('response :>> ', response);
+  // Display the response in the outputDiv
+  outputDiv.innerHTML += `<br>Response: ${response}`;
+});
+const history = [];
+
+async function sendMessage(message) {
+  // TODO: Replace with the URL of your server-side script
+  const serverUrl = 'http://localhost:8000/send_message';
+
+  // Send the message to the server-side script
+  const response = await fetch(serverUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ message })
+  });
+
+  // Get the response text
+  const responseText = await response.text();
+  const question = message;
+
+  history.push({
+    question: question,
+    response: responseText 
+  });
+  return responseText;
+}
+function renderHistory() {
+
+let html = '';
+
+history.forEach(h => {
+  html += `
+    <div class="history">
+      <div class="question">
+        <b>Q:</b> ${h.question}
+      </div>
+      
+      <div class="response">
+        <b>A:</b> ${h.response}  
+      </div>
+    </div>
+  `;
+});
+
+document.getElementById('history').innerHTML = html;
+
+}
+    </script>
+  </body>
+</html>
